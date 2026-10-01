@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Stock Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{--bg:#f6f1e7;--card:#fffdf8;--ink:#1f1b16;--mut:#7a7166;--line:#e3dac8;--in:#2f7a4b;--inbg:#e2f1e5;--out:#c8402a;--outbg:#fbe4de;--warn:#e0a21b;--acc:#1f1b16;--accfg:#f6f1e7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171410;--card:#221e18;--ink:#f3ecdf;--mut:#a39887;--line:#38322a;--in:#6fcf90;--inbg:#1e3324;--out:#ff8a72;--outbg:#3a221d;--warn:#f0b73a;--acc:#f3ecdf;--accfg:#171410}}
+:root[data-theme="dark"]{--bg:#171410;--card:#221e18;--ink:#f3ecdf;--mut:#a39887;--line:#38322a;--in:#6fcf90;--inbg:#1e3324;--out:#ff8a72;--outbg:#3a221d;--warn:#f0b73a;--acc:#f3ecdf;--accfg:#171410}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px}
+.mono,input[type=number]{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.wrap{max-width:720px;margin:0 auto;padding:12px 12px 90px}
+h1{font-size:22px;font-weight:800;margin:4px 0 10px;letter-spacing:-.02em}
+.date{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.date button{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:18px}
+.date .d{flex:1;text-align:center;font-weight:700;font-size:16px}
+.date .d small{display:block;color:var(--mut);font-weight:500;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.stat span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.stat b{font-size:22px;font-family:'JetBrains Mono',monospace}
+.chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px}
+.chip{flex:none;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600}
+.chip.on{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+input[type=search],input[type=text],select,input[type=date]{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;margin-bottom:10px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:8px;border-left:5px solid var(--in)}
+.row.low{border-left-color:var(--warn)}.row.zero{border-left-color:var(--out)}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.top .n{flex:1;font-weight:700;font-size:16px;line-height:1.15}
+.top .n small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.endbox{text-align:center}.endbox label{display:block;font-size:10px;color:var(--mut);letter-spacing:.08em}
+.endbox input{width:64px;text-align:center;font-size:20px;font-weight:700;padding:6px 2px;margin:0;border-radius:10px}
+.mv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.st{display:flex;align-items:center;border-radius:12px;overflow:hidden}
+.st.in{background:var(--inbg)}.st.out{background:var(--outbg)}
+.st .lb{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:800;letter-spacing:.1em;padding:0 3px;color:var(--mut)}
+.st button{width:40px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700;color:var(--ink)}
+.st.in button:last-child{color:var(--in)}.st.out button:last-child{color:var(--out)}
+.st input{flex:1;min-width:0;width:100%;text-align:center;border:0;background:transparent;color:var(--ink);font-size:20px;font-weight:700;padding:0}
+.st input:focus,.endbox input:focus{outline:2px solid var(--ink)}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs{gap:2px;overflow-x:auto}.tabs button{flex:1 0 auto;min-width:56px;padding:6px 8px;white-space:nowrap;border:0;background:none;color:var(--mut);font:inherit;font-size:10.5px;line-height:1.2;font-weight:700;border-radius:10px}.tabs button i{display:block;font-style:normal;font-size:17px}
+.tabs button.on{color:var(--accfg);background:var(--acc)}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;font-weight:600}
+th{font-size:11px;text-transform:uppercase;color:var(--mut);letter-spacing:.06em}
+td.in{color:var(--in)}td.out{color:var(--out)}
+.scroll{overflow-x:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.irow{display:grid;grid-template-columns:1fr 84px 56px 56px 40px;gap:6px;align-items:center;margin-bottom:6px}
+.irow input,.irow select{margin:0;padding:9px 8px}
+.btn{padding:12px;border-radius:12px;border:0;background:var(--acc);color:var(--accfg);font:inherit;font-weight:700;width:100%}
+.btn.red{background:var(--out);color:#fff}.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.x{border:1px solid var(--line);background:var(--card);color:var(--out);border-radius:10px;height:38px;font-weight:700}
+.note{color:var(--mut);font-size:13px;margin:6px 0 12px}
+.alert{background:var(--outbg);border:1px solid var(--out);border-radius:14px;padding:10px 12px;margin-bottom:10px}.alert b{color:var(--out)}.alert ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}.alert li{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;font-weight:600}.alert li span{font-family:'JetBrains Mono',monospace;color:var(--out)}.tag{display:inline-block;background:var(--out);color:#fff;border-radius:6px;font-size:10px;font-weight:800;padding:1px 6px;margin-left:6px;letter-spacing:.05em;vertical-align:middle}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}.card h3{margin:0 0 4px;font-size:16px}.card p{margin:0 0 10px;color:var(--mut);font-size:13px}.card .btn{margin-bottom:8px}textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:10px;font:12px 'JetBrains Mono',monospace;margin-bottom:8px}#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--acc);color:var(--accfg);padding:10px 16px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#toast.on{opacity:1}.srow{display:flex;align-items:center;gap:8px}.srow .n{flex:1;min-width:0;font-weight:700;font-size:15px;line-height:1.15}.srow .n small{display:block;font-weight:500;color:var(--mut);font-size:12px}.srow .st{width:132px;flex:none}.row.hit{border-left-color:var(--in)}.row.nohit{border-left-color:var(--line)}.grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--mut);margin:14px 2px 6px;text-transform:uppercase}.mrow{display:grid;grid-template-columns:1fr 84px 40px;gap:6px;align-items:center;margin-bottom:6px}.mrow input{margin:0;padding:9px 8px}.big{font-size:17px;padding:15px}.empty{text-align:center;color:var(--mut);padding:30px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="toast"></div>
+<nav class="tabs" id="tabs"></nav>
+<script id="embedded-data" type="application/json"></script>
+<script>
+window.addEventListener('error',e=>{try{const t=document.getElementById('toast');t.textContent=(!e.message||/^script error/i.test(e.message))?'Blocked here — use Share or Copy text':'Error: '+e.message+(e.lineno?' (line '+e.lineno+')':'');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000)}catch(x){}});
+const K='stock_tracker_v1';
+const SRC=document.documentElement.outerHTML;
+const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*6e4);return z.toISOString().slice(0,10)};
+const TODAY=iso(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
+const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function seed(){
+  const food=[['PORKCHOP',45],['CHICKEN',16],['CHICKEN W.',15],['PORK TAPA',0],['BEEF TAPA',11],['HUNGARIAN',5,16],['HOTDOG',3],['TOCINO',22],['DORY',1],['SPAM',11],['EGG',131],['BANGUS',6],['JOWLS',0],['BURGER',42],['CHOWPAN',0],['SISIG',0],['ADOBO',0],['BBQ',1],['INASAL',9],['LECHON K.',0],['FISH FINGER',0],['YANGCHOW',0],['RICE',1],['Breadings',0],['Mami',0]];
+  const drinks=[['R. MISMO',11,0,8],['S. MISMO',0],['C. MISMO',0],['M. DEW',10,0,9],['R. GRAPES',4,0,1],['C. BOTE',42,0,13],['S. BOTE',44,0,4],['MINERAL (10)',2,0,2],['MINERAL (25)',11,0,11],['COKE 1.75',15,0,1],['KOPIKO',5,0,2],['CUP NOODLES S.',7,0,1],['CUP NOODLES B.',3],['CUPS',6,5,1]];
+  const items=[],day={};let n=0;
+  const add=(cat,a)=>{const id='i'+(++n);items.push({id,name:a[0],cat,open:a[1]||0});if(a[2]||a[3])day[id]={in:a[2]||0,out:a[3]||0}};
+  food.forEach(a=>add('Food',a));drinks.forEach(a=>add('Drinks',a));
+  return {items,days:{[TODAY]:day},menu:seedMenu(),sales:{},exp:{},petty:{},online:{}};
+}
+function seedMenu(){return [["CLASSIC SILOG MEALS", "Pork Tapsilog", 90], ["CLASSIC SILOG MEALS", "Beef Tapsilog", 100], ["CLASSIC SILOG MEALS", "Adobosilog", 90], ["CLASSIC SILOG MEALS", "Porkchopsilog", 90], ["CLASSIC SILOG MEALS", "Burgersteaksilog", 85], ["CLASSIC SILOG MEALS", "Tocilog", 85], ["CLASSIC SILOG MEALS", "Spamsilog", 85], ["CLASSIC SILOG MEALS", "Hungariansilog", 85], ["CLASSIC SILOG MEALS", "Bangsilog", 85], ["CLASSIC SILOG MEALS", "Chicksilog", 85], ["CLASSIC SILOG MEALS", "Hotsilog", 75], ["CLASSIC SILOG DUO MEALS", "Sisig+Porkchop", 139], ["CLASSIC SILOG DUO MEALS", "Sisig+Hungarian", 139], ["CLASSIC SILOG DUO MEALS", "Sisig+Burger", 139], ["CLASSIC SILOG DUO MEALS", "Sisig+Chicken", 139], ["CLASSIC SILOG DUO MEALS", "Sisig+Adobo", 139], ["CLASSIC SILOG DUO MEALS", "Sisig+Spam", 130], ["CLASSIC SILOG DUO MEALS", "Sisig+Hotdog", 120], ["CLASSIC SILOG DUO MEALS", "Porkchop+Adobo", 139], ["CLASSIC SILOG DUO MEALS", "Porkchop+Burger", 139], ["CLASSIC SILOG DUO MEALS", "Porkchop+Hungarian", 139], ["CLASSIC SILOG DUO MEALS", "Porkchop+Chicken", 139], ["CLASSIC SILOG DUO MEALS", "Porkchop+Spam", 130], ["CLASSIC SILOG DUO MEALS", "Porkchop+Hotdog", 120], ["CLASSIC TRIO SILOG MEALS", "Sisig+Fried Chicken+Hotdog", 159], ["CLASSIC TRIO SILOG MEALS", "Porkchop+Burger+Spam", 159], ["CLASSIC TRIO SILOG MEALS", "Hungarian+Adobo+Spam", 159], ["CLASSIC TRIO SILOG MEALS", "Tapa+Bangus+Hotdog", 159], ["SIZZLING MEALS", "Sizzling Sisig", 90], ["SIZZLING MEALS", "Sizzling Porkchop", 90], ["SIZZLING MEALS", "Sizzling Pork Adobo", 90], ["SIZZLING MEALS", "Sizzling Lechon Kawali", 85], ["SIZZLING MEALS", "Sizzling Burgersteak", 85], ["SIZZLING MEALS", "Sizzling Hungarian", 85], ["SIZZLING MEALS", "Sizzling Chicken", 85], ["SIZZLING MEALS", "Sizzling Hotdog", 75], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Porkchop", 149], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Hungarian", 149], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Burger", 149], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Fried Chicken", 149], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Adobo", 149], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Sisig+Hotdog", 129], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Porkchop+Adobo", 139], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Porkchop+Hungarian", 139], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Porkchop+Burger", 139], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Porkchop+Fried Chicken", 139], ["SIZZLING DOUBLEMAXX (x2 ulam)", "Porkchop+Hotdog", 120], ["SIZZLING OVERMAXX (x3 ulam)", "Sisig+Fried Chicken+Hotdog", 169], ["SIZZLING OVERMAXX (x3 ulam)", "Porkchop+Burger+Spam", 159], ["SIZZLING OVERMAXX (x3 ulam)", "Hungarian+Adobo+Spam", 159], ["SIZZLING OVERMAXX (x3 ulam)", "Tapa+Bangus+Hotdog", 159], ["FLAVORED CHICKEN WINGS", "Honey Dip Wings", 180], ["FLAVORED CHICKEN WINGS", "Spicy Korean Wings", 170], ["FLAVORED CHICKEN WINGS", "Parmesan Wings", 170], ["FLAVORED CHICKEN WINGS", "Buttered Wings", 170], ["FLAVORED CHICKEN WINGS", "Original Flavor", 150], ["SOLO MAX MEAL", "Chicken Inasal Promax", 179], ["SOLO MAX MEAL", "Chicken Inasal Pro", 169], ["SOLO MAX MEAL", "Pancit Canton", 90], ["SOLO MAX MEAL", "Pancit Bihon Guisado", 85], ["SOLO MAX MEAL", "Glazed Barbique", 30], ["GOOD FOR SHARING", "Lechon Kawali", 250], ["GOOD FOR SHARING", "Crispy Fish Finger", 120], ["SAVORY RICE BOWL MEAL", "Adobo Rice", 80], ["SAVORY RICE BOWL MEAL", "Sisig Rice", 80], ["SAVORY RICE BOWL MEAL", "Pork Chao Fan", 75], ["SAVORY RICE BOWL MEAL", "Yang Chao Rice", 75]].map((a,i)=>({id:'m'+(i+1),cat:a[0],name:a[1],price:a[2]}))}
+let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+let E=null;try{E=JSON.parse(document.getElementById('embedded-data').textContent||'null')}catch(e){}
+if(E&&Array.isArray(E.items)&&(!S||!S.items||(E._t||0)>(S._t||0)))S=E;
+if(!S||!S.items)S=seed();
+if(!S.menu)S.menu=seedMenu();if(!S.sales)S.sales={};if(!S.exp)S.exp={};if(!S.petty)S.petty={};if(!S.online)S.online={};
+function fixSales(){for(const d in S.sales)for(const id in S.sales[d]){const v=S.sales[d][id];if(typeof v==='number')S.sales[d][id]={cash:v,gcash:0}}}fixSales();
+let savedAt=null;const save=()=>{savedAt=new Date();S._t=Date.now();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(window.__sync)window.__sync.push()};
+
+const V={pay:'cash',xcat:'cash',xd:'',xa:'',tab:'today',date:TODAY,q:'',cat:'All',from:addDays(TODAY,-6),to:TODAY,arm:null};
+const lv=i=>i.min==null?3:i.min;
+const mv=(d,id)=>(S.days[d]&&S.days[d][id])||{in:0,out:0};
+const begin=(d,id)=>{const it=S.items.find(i=>i.id===id);let b=it.open;for(const k in S.days){if(k<d){const m=S.days[k][id];if(m)b+=m.in-m.out}}return b};
+const cats=()=>['All',...new Set(S.items.map(i=>i.cat))];
+function setMv(d,id,f,v){v=Math.max(0,Math.floor(+v)||0);S.days[d]=S.days[d]||{};const m=S.days[d][id]=S.days[d][id]||{in:0,out:0};m[f]=v;save()}
+
+const peso=n=>'₱'+(+n||0).toLocaleString();
+const mcats=()=>['All',...new Set(S.menu.map(m=>m.cat))];
+const sold=(d,id,m)=>{const r=S.sales[d]&&S.sales[d][id];if(!r)return 0;return m?(r[m]||0):(r.cash||0)+(r.gcash||0)};
+function setSale(d,id,m,v){v=Math.max(0,Math.floor(+v)||0);S.sales[d]=S.sales[d]||{};const r=S.sales[d][id]=S.sales[d][id]||{cash:0,gcash:0};r[m]=v;save()}
+const salesBy=(d,m)=>S.menu.reduce((a,x)=>a+sold(d,x.id,m)*x.price,0);
+const salesTotal=d=>salesBy(d,'cash')+salesBy(d,'gcash');
+const expBy=(d,c)=>(S.exp[d]||[]).filter(e=>e.cat===c).reduce((a,e)=>a+e.amt,0);
+const PAYN={cash:'Cash',gcash:'GCash'},XN={cash:'Cash expense',online:'Online payment'};
+function dateBar(d){return `<div class="date"><button data-a="day" data-n="-1">‹</button><div class="d">${fmt(d)}<small>${d===TODAY?'Today':(d<TODAY?'Past day':'Future day')}${d!==TODAY?' · <a href="#" data-a="gotoday" style="color:inherit">jump to today</a>':''}</small></div><button data-a="day" data-n="1">›</button></div>`}
+function head(){return `<h1>📦 Daily Stock Tracker</h1>`}
+function today(){
+  const d=V.date,q=V.q.toLowerCase();
+  const all=S.items.map(i=>{const m=mv(d,i.id),b=begin(d,i.id);return {...i,b,in:m.in,out:m.out,e:b+m.in-m.out,r:(b+m.in-m.out)<=lv(i)}});
+  const list=all.filter(i=>(V.cat==='All'||i.cat===V.cat)&&i.name.toLowerCase().includes(q));
+  const tin=all.reduce((a,i)=>a+i.in,0),tout=all.reduce((a,i)=>a+i.out,0),re=all.filter(i=>i.r).sort((a,b)=>a.e-b.e),low=re.length;
+  let h=head()+`<div class="date"><button data-a="day" data-n="-1">‹</button><div class="d">${fmt(d)}<small>${d===TODAY?'Today':(d<TODAY?'Past day':'Future day')}${d!==TODAY?' · <a href="#" data-a="gotoday" style="color:inherit">jump to today</a>':''}</small></div><button data-a="day" data-n="1">›</button></div>
+  <div class="stats"><div class="stat"><span>Total in</span><b style="color:var(--in)">+${tin}</b></div><div class="stat"><span>Total out</span><b style="color:var(--out)">−${tout}</b></div><div class="stat"><span>Reorder</span><b style="color:${low?'var(--out)':'var(--in)'}">${low}</b></div></div>
+  <div class="chips">${cats().map(c=>`<button class="chip ${V.cat===c?'on':''}" data-a="cat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  ${low?`<div class="alert"><b>⚠️ Reorder now (${low})</b><ul>${re.map(i=>`<li>${esc(i.name)} <span>${i.e}/${lv(i)}</span></li>`).join('')}</ul></div>`:''}
+  <input type="search" id="q" placeholder="Search item…" value="${esc(V.q)}">`;
+  h+=`<div id="list">`+(list.length?list.map(i=>`<div class="row ${i.e<=0?'zero':i.r?'low':''}">
+   <div class="top"><div class="n">${esc(i.name)}${i.r?'<span class="tag">REORDER</span>':''}<small>${esc(i.cat)} · begin <span class="mono">${i.b}</span> · reorder at <span class="mono">${lv(i)}</span></small></div>
+   <div class="endbox"><label>ENDING</label><input type="number" inputmode="numeric" value="${i.e}" data-a="end" data-id="${i.id}"></div></div>
+   <div class="mv">${['in','out'].map(f=>`<div class="st ${f}"><span class="lb">${f.toUpperCase()}</span><button data-a="step" data-f="${f}" data-id="${i.id}" data-n="-1">−</button><input type="number" inputmode="numeric" min="0" value="${i[f]}" data-a="set" data-f="${f}" data-id="${i.id}"><button data-a="step" data-f="${f}" data-id="${i.id}" data-n="1">+</button></div>`).join('')}</div></div>`).join(''):'<div class="empty">No items found.</div>')+`</div>
+  <p class="note">Beginning stock carries over automatically from the previous day's ending. Type in the Ending box to match a physical count — the difference is logged as In or Out.</p>`;
+  return h;
+}
+function summary(){
+  const rows=S.items.filter(i=>V.cat==='All'||i.cat===V.cat).map(i=>{let a=0,o=0;for(const k in S.days){if(k>=V.from&&k<=V.to&&S.days[k][i.id]){a+=S.days[k][i.id].in;o+=S.days[k][i.id].out}}const b=begin(V.from,i.id);return {n:i.name,b,a,o,e:b+a-o}});
+  return head()+`<div class="two"><div><small class="note">From</small><input type="date" data-a="from" value="${V.from}"></div><div><small class="note">To</small><input type="date" data-a="to" value="${V.to}"></div></div>
+  <div class="chips">${cats().map(c=>`<button class="chip ${V.cat===c?'on':''}" data-a="cat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  <div class="scroll"><table><tr><th>Item</th><th>Begin</th><th>In</th><th>Out</th><th>End</th></tr>${rows.map(r=>`<tr><td>${esc(r.n)}</td><td class="mono">${r.b}</td><td class="mono in">${r.a||'–'}</td><td class="mono out">${r.o||'–'}</td><td class="mono"><b>${r.e}</b></td></tr>`).join('')}</table></div>
+  <p class="note">Totals for the selected date range. Use it for weekly or monthly counts.</p>`;
+}
+function sales(){
+  const d=V.date,q=V.q.toLowerCase(),P=V.pay;
+  const list=S.menu.filter(m=>(V.cat==='All'||m.cat===V.cat)&&m.name.toLowerCase().includes(q));
+  return head().replace('Daily Stock Tracker','Sales')+dateBar(d)+`
+  <div class="stats"><div class="stat"><span>Total sales</span><b style="color:var(--in)">${peso(salesTotal(d))}</b></div><div class="stat"><span>Cash</span><b>${peso(salesBy(d,'cash'))}</b></div><div class="stat"><span>GCash</span><b>${peso(salesBy(d,'gcash'))}</b></div></div>
+  <div class="note" style="margin:0 0 4px">Customer is paying by:</div>
+  <div class="chips">${['cash','gcash'].map(p=>`<button class="chip ${P===p?'on':''}" style="flex:1;padding:11px" data-a="pay" data-p="${p}">${p==='cash'?'💵 Cash':'📱 GCash'}</button>`).join('')}</div>
+  <div class="chips">${mcats().map(c=>`<button class="chip ${V.cat===c?'on':''}" data-a="cat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  <input type="search" id="q" placeholder="Search menu…" value="${esc(V.q)}">
+  <div>`+(list.length?list.map(m=>{const n=sold(d,m.id),c=sold(d,m.id,'cash'),g=sold(d,m.id,'gcash');return `<div class="row ${n?'hit':'nohit'}"><div class="srow"><div class="n">${esc(m.name)}<small>${esc(m.cat)} · ${peso(m.price)}${n?`<br>${c?'Cash ×'+c+' ':''}${g?'GCash ×'+g+' ':''}= <b>${peso(n*m.price)}</b>`:''}</small></div><div class="st ${P==='cash'?'in':'out'}"><button data-a="sstep" data-id="${m.id}" data-n="-1">−</button><input type="number" inputmode="numeric" min="0" value="${sold(d,m.id,P)}" data-a="sset" data-id="${m.id}"><button data-a="sstep" data-id="${m.id}" data-n="1">+</button></div></div></div>`}).join(''):'<div class="empty">No menu items found.</div>')+`</div>
+  <p class="note">Choose Cash or GCash above, then tap + for each dish sold. The number in the box is the count for the selected payment type.</p>`;
+}
+function expenses(){
+  const d=V.date,L=S.exp[d]||[],cx=expBy(d,'cash'),ox=expBy(d,'online'),cs=salesBy(d,'cash'),gs=salesBy(d,'gcash');
+  const grp=c=>{const r=L.filter(e=>e.cat===c);return `<div class="grp">${XN[c]} · ${peso(expBy(d,c))}</div>`+(r.length?r.map(e=>`<div class="mrow"><input type="text" value="${esc(e.desc)}" data-a="xdesc" data-id="${e.id}"><input type="number" inputmode="decimal" value="${e.amt}" data-a="xamt" data-id="${e.id}"><button class="x" data-a="xdel" data-id="${e.id}">${V.arm==='x'+e.id?'Sure?':'✕'}</button></div>`).join(''):'<div class="note">None yet.</div>')};
+  return head().replace('Daily Stock Tracker','Expenses')+dateBar(d)+`
+  <div class="stats"><div class="stat"><span>Cash exp.</span><b style="color:var(--out)">${peso(cx)}</b></div><div class="stat"><span>Online</span><b style="color:var(--out)">${peso(ox)}</b></div><div class="stat"><span>Total</span><b>${peso(cx+ox)}</b></div></div>
+  <div class="card"><h3>Balance for the day</h3><p style="margin:0">💵 Cash: ${peso(cs)} sales − ${peso(cx)} expenses = <b>${peso(cs-cx)}</b><br>📱 GCash: ${peso(gs)} sales − ${peso(ox)} online = <b>${peso(gs-ox)}</b></p></div>
+  <div class="chips">${['cash','online'].map(c=>`<button class="chip ${V.xcat===c?'on':''}" style="flex:1;padding:11px" data-a="xcat" data-c="${c}">${c==='cash'?'💵 Cash expense':'📱 Online payment'}</button>`).join('')}</div>
+  <div class="mrow" style="grid-template-columns:1fr 100px"><input type="text" id="xd" placeholder="What was it for?" value="${esc(V.xd)}"><input type="number" inputmode="decimal" id="xa" placeholder="₱ Amount" value="${esc(V.xa)}"></div>
+  <button class="btn" data-a="xadd">+ Add ${XN[V.xcat].toLowerCase()}</button>
+  ${grp('cash')}${grp('online')}`;
+}
+const dsr=d=>{const o=S.petty[d]||0,oo=S.online[d]||0,g=salesBy(d,'gcash'),c=salesBy(d,'cash'),oe=expBy(d,'online'),ce=expBy(d,'cash');return {o,oo,g,c,gross:g+c,oe,ce,close:o+c-ce,oclose:oo+g-oe,net:g+c-oe-ce}};
+function dsrRows(d){const r=dsr(d);return [['Petty Cash (Open)',r.o],['Online Cash (Open)',r.oo],['Gcash Payments',r.g],['Cash Payments',r.c],['Gross Sales',r.gross],['Online Expense',r.oe],['Cash Expense',r.ce],['Cash on Hand (Close)',r.close],['Online Cash (Close)',r.oclose],['Net Sales',r.net]]}
+function dsrText(d){return '🧾 DAILY SALES SUMMARY — '+fmt(d)+'\n\n'+dsrRows(d).map(r=>r[0]+': '+peso(r[1])).join('\n')}
+function dsrView(){
+  const d=V.date,rows=dsrRows(d),bold=['Gross Sales','Cash on Hand (Close)','Online Cash (Close)','Net Sales'];
+  return head().replace('Daily Stock Tracker','Daily Sales Summary')+dateBar(d)+expPanel()+`
+  <div class="card"><h3>Opening Balances</h3><p>Petty Cash: cash in the drawer at the start of the day.</p><input type="number" inputmode="decimal" id="pc" data-a="petty" value="${S.petty[d]||''}" placeholder="₱ 0" style="margin-bottom:12px"><p>Online Cash: Gcash / online balance at the start of the day.</p><input type="number" inputmode="decimal" id="oc" data-a="online" value="${S.online[d]||''}" placeholder="₱ 0" style="margin-bottom:8px"><button class="btn ghost" data-a="pcarry">Use yesterday's closing balances</button></div>
+  <div class="scroll"><table>${rows.slice(2).map(r=>{const b=bold.includes(r[0]);return `<tr${b?' style="background:var(--bg)"':''}><td>${r[0]}</td><td class="mono ${r[0].includes('Expense')?'out':''}" style="${b?'font-weight:800;font-size:16px':''}">${peso(r[1])}</td></tr>`}).join('')}</table></div>
+  <p class="note">Cash on Hand = Petty Cash + Cash Payments − Cash Expense.<br>Online Cash (Close) = Online Cash (Open) + Gcash Payments − Online Expense.<br>Net Sales = Gross Sales − Online Expense − Cash Expense.</p>
+  <button class="btn" data-a="dtext">📤 Share summary</button><div style="height:8px"></div><button class="btn ghost" data-a="dcsv">Excel file for this day</button>`;
+}
+function menu(){
+  const q=V.q.toLowerCase(),list=S.menu.filter(m=>m.name.toLowerCase().includes(q)||m.cat.toLowerCase().includes(q));
+  let h=head().replace('Daily Stock Tracker','Menu')+`<p class="note">List of products you sell, with prices. Edit a name or price, or remove an item. Changes save automatically.</p><input type="search" id="q" placeholder="Search menu…" value="${esc(V.q)}">`;
+  [...new Set(list.map(m=>m.cat))].forEach(c=>{h+=`<div class="grp">${esc(c)}</div>`+list.filter(m=>m.cat===c).map(m=>`<div class="mrow"><input type="text" value="${esc(m.name)}" data-a="mname" data-id="${m.id}"><input type="number" inputmode="decimal" value="${m.price}" data-a="mprice" data-id="${m.id}"><button class="x" data-a="mdel" data-id="${m.id}">${V.arm==='m'+m.id?'Sure?':'✕'}</button></div>`).join('')});
+  if(!list.length)h+='<div class="empty">No menu items found.</div>';
+  return h+`<datalist id="mcl">${mcats().filter(c=>c!=='All').map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+  <div class="grp">Add new menu item</div>
+  <input type="text" id="mn" placeholder="Item name"><div class="two"><input type="text" id="mc" placeholder="Category" list="mcl"><input type="number" inputmode="decimal" id="mp" placeholder="Price ₱"></div>
+  <button class="btn" data-a="madd">+ Add to menu</button>`;
+}
+function items(){
+  return head()+`<p class="note">Add, rename or remove items. “Start” is opening stock. “Reorder” is the level where an alert appears (default 3).</p>
+  <div class="irow" style="font-size:11px;color:var(--mut)"><span>NAME</span><span>CATEGORY</span><span>START</span><span>REORDER</span><span></span></div>
+  ${S.items.map(i=>`<div class="irow"><input type="text" value="${esc(i.name)}" data-a="iname" data-id="${i.id}"><input type="text" value="${esc(i.cat)}" data-a="icat" data-id="${i.id}" list="cl"><input type="number" inputmode="numeric" value="${i.open}" data-a="iopen" data-id="${i.id}"><input type="number" inputmode="numeric" value="${lv(i)}" data-a="imin" data-id="${i.id}"><button class="x" data-a="del" data-id="${i.id}">${V.arm==='d'+i.id?'Sure?':'✕'}</button></div>`).join('')}
+  <datalist id="cl">${cats().filter(c=>c!=='All').map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+  <div class="irow" style="margin-top:14px"><input type="text" id="nn" placeholder="New item name"><input type="text" id="nc" placeholder="Category" list="cl"><input type="number" inputmode="numeric" id="no" placeholder="0"><input type="number" inputmode="numeric" id="nm" placeholder="3"><span></span></div>
+  <button class="btn" data-a="add">+ Add item</button>
+  <div style="height:22px"></div>
+  <button class="btn ${V.arm==='reset'?'red':'ghost'}" data-a="reset">${V.arm==='reset'?'Tap again to erase everything & restore sample data':'Reset all data'}</button>`;
+}
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200)}
+function dl(name,data,mime){exportBox(name,data,mime)}
+function expPanel(){return V.exp?`<div class="card" style="border:2px solid var(--in)"><h3>📗 ${esc(V.exp.name)} is ready</h3><p>Pick any option that works on your phone.</p><button class="btn" data-a="eshare">📤 Share / Save file</button><button class="btn ghost" data-a="ecopy">📋 Copy text (paste into Excel / Sheets)</button><textarea id="et" readonly style="min-height:90px">${esc(V.exp.data.replace(/^\ufeff/,''))}</textarea><button class="btn ghost" data-a="edown">⬇️ Try direct download</button><button class="btn ghost" data-a="eclose">Close</button></div>`:''}
+function exportBox(name,data,mime){V.exp={name,data,mime};render();window.scrollTo(0,0)}
+async function expAct(k){
+  const x=V.exp;if(!x)return;const ta=document.getElementById('et');
+  try{
+    if(k==='close'){V.exp=null;render();return}
+    if(k==='copy'){ta.select();try{await navigator.clipboard.writeText(x.data.replace(/^\ufeff/,''));toast('Copied ✓ — paste into Excel or Sheets')}catch(e){toast('Text selected — press Copy on your keyboard')}return}
+    if(k==='share'){
+      try{const f=new File([x.data],x.name,{type:x.mime});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:x.name});return}}catch(e){if(e&&e.name==='AbortError')return}
+      try{if(navigator.share){await navigator.share({title:x.name,text:x.data.replace(/^\ufeff/,'')});return}}catch(e){if(e&&e.name==='AbortError')return}
+      toast('Sharing not available here — use Copy text');return}
+    if(k==='down'){const a=document.createElement('a');a.href='data:'+x.mime+';charset=utf-8,'+encodeURIComponent(x.data);a.download=x.name;document.body.appendChild(a);a.click();a.remove();toast('If nothing downloads, use Share or Copy')}
+  }catch(e){toast('Not available here — use Copy text')}
+}
+const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+const rowsFor=d=>S.items.map(i=>{const m=mv(d,i.id),b=begin(d,i.id);return [d,i.cat,i.name,b,m.in,m.out,b+m.in-m.out,lv(i),(b+m.in-m.out)<=lv(i)?'REORDER':'']});
+const CSVH=['Date','Category','Item','Beginning','In','Out','Ending','Reorder level','Status'];
+const toCSV=rows=>'\ufeff'+[CSVH,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+function report(d){
+  const r=rowsFor(d),re=r.filter(x=>x[8]);
+  let t='📦 STOCK REPORT — '+fmt(d)+'\n';
+  if(salesTotal(d)||expBy(d,'cash')||expBy(d,'online'))t+='\n💰 Sales: '+peso(salesTotal(d))+' (Cash '+peso(salesBy(d,'cash'))+' · GCash '+peso(salesBy(d,'gcash'))+')\n💸 Expenses: Cash '+peso(expBy(d,'cash'))+' · Online '+peso(expBy(d,'online'))+'\n';
+  t+=re.length?'\n⚠️ REORDER ('+re.length+'):\n'+re.map(x=>'• '+x[2]+' — '+x[6]+' left (min '+x[7]+')').join('\n')+'\n':'\n✅ Nothing to reorder.\n';
+  [...new Set(r.map(x=>x[1]))].forEach(c=>{t+='\n'+c.toUpperCase()+'  (begin / in / out / end)\n'+r.filter(x=>x[1]===c).map(x=>x[2]+': '+x[3]+' / +'+x[4]+' / −'+x[5]+' / '+x[6]).join('\n')+'\n'});
+  return t;
+}
+const GSCODE=`function doPost(e){
+  var d=JSON.parse(e.postData.contents),ss=SpreadsheetApp.getActive();
+  for(var n in d){
+    var s=ss.getSheetByName(n)||ss.insertSheet(n),r=d[n];
+    s.clear();
+    if(r.length)s.getRange(1,1,r.length,r[0].length).setValues(r);
+  }
+  return ContentService.createTextOutput('ok');
+}`;
+const gsUrl=()=>{try{return localStorage.getItem('gs_url')||''}catch(e){return ''}};
+const salesRows=()=>Object.keys(S.sales).sort().flatMap(d=>S.menu.flatMap(m=>['cash','gcash'].filter(p=>sold(d,m.id,p)>0).map(p=>[d,m.cat,m.name,PAYN[p],m.price,sold(d,m.id,p),sold(d,m.id,p)*m.price])));
+const expRows=()=>Object.keys(S.exp).sort().flatMap(d=>S.exp[d].map(e=>[d,XN[e.cat],e.desc,e.amt]));
+function reportSets(){
+  const inv=[CSVH,...Object.keys(S.days).sort().flatMap(rowsFor)];
+  const sal=[['Date','Category','Item','Payment','Price','Qty','Total'],...salesRows()];
+  const exp=[['Date','Type','Description','Amount'],...expRows()];
+  const sum=[['Category','Item','Begin','In','Out','End','Reorder level','Status'],...S.items.map(i=>{let a=0,o=0;for(const k in S.days){if(k>=V.from&&k<=V.to&&S.days[k][i.id]){a+=S.days[k][i.id].in;o+=S.days[k][i.id].out}}const b=begin(V.from,i.id),e=b+a-o;return [i.cat,i.name,b,a,o,e,lv(i),e<=lv(i)?'REORDER':'']})];
+  const ds=[...new Set([...Object.keys(S.sales),...Object.keys(S.exp),...Object.keys(S.petty),...Object.keys(S.online)])].sort();
+  const dsr_=[['Date','Petty Cash (Open)','Online Cash (Open)','Gcash Payments','Cash Payments','Gross Sales','Online Expense','Cash Expense','Cash on Hand (Close)','Online Cash (Close)','Net Sales'],...ds.map(d=>{const r=dsr(d);return [d,r.o,r.oo,r.g,r.c,r.gross,r.oe,r.ce,r.close,r.oclose,r.net]})];
+  const out={Inventory:inv,Sales:sal,Expenses:exp,Summary:sum,'Daily Sales':dsr_};
+  for(const k in out){const w=Math.max(...out[k].map(r=>r.length));out[k]=out[k].map(r=>r.concat(Array(w-r.length).fill('')))}
+  return out;
+}
+const gsSets=reportSets;
+const colN=n=>{let s='';n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+const xe=v=>String(v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function crc32(b){let t=crc32.t;if(!t){t=crc32.t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}}let r=-1;for(let i=0;i<b.length;i++)r=t[(r^b[i])&255]^(r>>>8);return(r^-1)>>>0}
+const le=(...p)=>{const a=[];for(let i=0;i<p.length;i+=2){let v=p[i+1];for(let k=0;k<p[i];k++){a.push(v&255);v=v>>>8}}return Uint8Array.from(a)};
+function zipStore(files){
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  for(const f of files){const nb=enc.encode(f.n),d=enc.encode(f.d),c=crc32(d);
+    const lh=le(4,0x04034b50,2,20,2,2048,2,0,2,0,2,33,4,c,4,d.length,4,d.length,2,nb.length,2,0);
+    cen.push(le(4,0x02014b50,2,20,2,20,2,2048,2,0,2,0,2,33,4,c,4,d.length,4,d.length,2,nb.length,2,0,2,0,2,0,2,0,4,0,4,off),nb);
+    parts.push(lh,nb,d);off+=lh.length+nb.length+d.length}
+  const cs=cen.reduce((a,x)=>a+x.length,0);
+  const all=[...parts,...cen,le(4,0x06054b50,2,0,2,0,2,files.length,2,files.length,4,cs,4,off,2,0)];
+  const out=new Uint8Array(all.reduce((a,x)=>a+x.length,0));let o=0;for(const x of all){out.set(x,o);o+=x.length}return out;
+}
+function buildXlsx(sets){
+  const names=Object.keys(sets),H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const files=[
+    {n:'[Content_Types].xml',d:H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+names.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>'},
+    {n:'_rels/.rels',d:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {n:'xl/workbook.xml',d:H+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+names.map((n,i)=>'<sheet name="'+xe(n)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>'},
+    {n:'xl/_rels/workbook.xml.rels',d:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+names.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(names.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {n:'xl/styles.xml',d:H+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>'}
+  ];
+  names.forEach(n=>{const rows=sets[n];files.push({n:'xl/worksheets/sheet'+(files.length-4)+'.xml',d:H+'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="'+(rows[0]||[1]).length+'" width="18" customWidth="1"/></cols><sheetData>'+rows.map((r,ri)=>'<row r="'+(ri+1)+'">'+r.map((c,ci)=>{const ref=colN(ci)+(ri+1),st=ri?'':' s="1"';return typeof c==='number'&&isFinite(c)?'<c r="'+ref+'"'+st+'><v>'+c+'</v></c>':'<c r="'+ref+'"'+st+' t="inlineStr"><is><t xml:space="preserve">'+xe(c)+'</t></is></c>'}).join('')+'</row>').join('')+'</sheetData></worksheet>'})});
+  return zipStore(files);
+}
+async function xlsxAct(k){
+  const bytes=buildXlsx(reportSets()),name='reports-'+TODAY+'.xlsx',mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if(k==='share'){try{const f=new File([bytes],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}toast('Share not available here — downloading instead')}
+  try{const u=URL.createObjectURL(new Blob([bytes],{type:mime})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('If nothing downloads, use Share workbook')}catch(e){toast('Download blocked here — use Share workbook')}
+}
+function gsAct(k){
+  if(k==='code'){navigator.clipboard.writeText(GSCODE).then(()=>toast('Script copied ✓'),()=>{const t=document.getElementById('gsc');t.select();toast('Text selected — copy it')});return}
+  if(k==='send'){
+    const u=gsUrl();if(!/^https:\/\/script\.google\.com\//.test(u))return toast('Paste your Web app URL first');
+    toast('Sending…');
+    fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(gsSets())}).then(()=>toast('Sent ✓ — check your sheet'),()=>toast('Could not send — check internet'));return}
+  const rows=k==='day'?[CSVH,...rowsFor(V.date)]:reportSets()[({all:'Inventory',sales:'Sales',exp:'Expenses',sum:'Summary',dsr:'Daily Sales'})[k]];
+  if(rows.length<2)return toast('No records yet');
+  const tsv=rows.map(r=>r.map(c=>String(c).replace(/[\t\r\n]+/g,' ')).join('\t')).join('\n');
+  window.open('https://sheets.new','_blank');
+  const fb=()=>exportBox('sheet-data.tsv',tsv,'text/tab-separated-values');
+  try{navigator.clipboard.writeText(tsv).then(()=>toast('Copied ✓ — tap cell A1 in the new sheet and paste'),fb)}catch(e){fb()}
+}
+function saveTab(){
+  return head().replace('Daily Stock Tracker','Save &amp; Close')+expPanel()+`<div class="card"><h3>✅ Auto-saved</h3><p>Every change is saved on this device automatically${savedAt?' · last '+savedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}. Tap Save &amp; Close when you're done for the day, or use the options below to keep a backup.</p><button class="btn big" data-a="close">💾 Save &amp; Close</button></div>
+  <div class="card"><h3>📤 Share report — ${fmt(V.date)}</h3><p>Send today's stock and the reorder list by Messenger, Viber, SMS or email.</p>
+  <textarea id="rep" readonly>${esc(report(V.date))}</textarea>
+  <button class="btn" data-a="share">Share report</button><button class="btn ghost" data-a="copy">Copy text</button></div>
+  <div class="card"><h3>📗 Excel file</h3><p>One workbook with 5 tabs: Inventory, Sales, Expenses, Summary and Daily Sales. Opens in Excel and Google Sheets.</p>
+  <button class="btn" data-a="xlsx" data-k="share">📤 Share all reports (.xlsx)</button><button class="btn ghost" data-a="xlsx" data-k="down">⬇️ Download all reports (.xlsx)</button><div class="grp">Single CSV files</div>
+  <button class="btn ghost" data-a="csvday">Download ${V.date} (Excel)</button><button class="btn ghost" data-a="csvall">Download all days (Excel)</button><button class="btn ghost" data-a="csvsales">Download sales (Excel)</button><button class="btn ghost" data-a="csvexp">Download expenses (Excel)</button></div>
+  <div class="card"><h3>📊 Google Sheets</h3><p>Quick way: copies the data and opens a new Google Sheet. Tap cell A1 and paste.</p>
+  <button class="btn" data-a="gs" data-k="all">Inventory (all days) → new Sheet</button><button class="btn ghost" data-a="gs" data-k="day">Inventory ${V.date} only → new Sheet</button><button class="btn ghost" data-a="gs" data-k="sales">Sales → new Sheet</button><button class="btn ghost" data-a="gs" data-k="exp">Expenses → new Sheet</button><button class="btn ghost" data-a="gs" data-k="sum">Summary (${V.from} to ${V.to}) → new Sheet</button><button class="btn ghost" data-a="gs" data-k="dsr">Daily Sales Summary → new Sheet</button>
+  <details style="margin-top:6px"><summary style="font-weight:700;cursor:pointer">One-tap send to my own Sheet (setup once)</summary>
+  <p style="margin-top:8px">1. Open your Google Sheet → Extensions → Apps Script.<br>2. Delete everything, paste the script below, Save.<br>3. Deploy → New deployment → Web app → Execute as <b>Me</b>, access <b>Anyone</b> → Deploy.<br>4. Paste the Web app URL here:</p>
+  <input type="text" id="gsu" data-a="gsurl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(gsUrl())}">
+  <textarea id="gsc" readonly style="min-height:120px">${esc(GSCODE)}</textarea>
+  <button class="btn ghost" data-a="gs" data-k="code">Copy script</button>
+  <button class="btn" data-a="gs" data-k="send">Send all data to my Sheet</button>
+  <p style="margin:0">Sends all 5 reports (Inventory, Sales, Expenses, Summary, Daily Sales) as separate tabs and replaces them each time. The Summary tab uses the date range chosen on the Report tab. Anyone with the URL can write to your sheet, so keep it private.</p></details></div>
+  <div class="card"><h3>📲 Share app with data</h3><p>Sends a copy of this app that already contains all your current data, so it doesn't open empty for the other person. Re-share after each update.</p><button class="btn" data-a="shareapp">Share app file with data</button></div>
+  <div class="card"><h3>💾 Backup &amp; restore</h3><p>Save a backup file to move your data to another phone or recover it.</p>
+  <button class="btn" data-a="backup">Download backup file</button>
+  <input type="file" id="rf" accept=".json,application/json" style="margin:6px 0"><p style="margin:0">or paste backup text:</p><textarea id="rt" placeholder="Paste backup text here"></textarea><button class="btn ghost" data-a="restore">Restore from pasted text</button></div>`;
+}
+function appWithData(){const j=JSON.stringify(S).replace(/</g,'\\u003c');return '<!DOCTYPE html>\n'+SRC.replace(/(<script id="embedded-data" type="application\/json">)[\s\S]*?(<\/script>)/,(m,a,b)=>a+j+b)}
+function loadBackup(txt){try{const o=JSON.parse(txt);if(!o||!Array.isArray(o.items)||typeof o.days!=='object')throw 0;S={items:o.items,days:o.days,menu:Array.isArray(o.menu)?o.menu:seedMenu(),sales:o.sales||{},exp:o.exp||{},petty:o.petty||{},online:o.online||{}};fixSales();save();toast('Backup restored ✓');V.tab='today';render()}catch(e){toast('Not a valid backup')}}
+function render(keepQ){
+  const app=document.getElementById('app');
+  app.innerHTML=V.tab==='today'?today():V.tab==='sales'?sales():V.tab==='expenses'?expenses():V.tab==='menu'?menu():V.tab==='summary'?summary():V.tab==='save'?saveTab():V.tab==='dsr'?dsrView():items();
+  document.getElementById('tabs').innerHTML=[['today','✏️','Stock'],['sales','🧾','Sales'],['expenses','💸','Expenses'],['menu','🍽️','Menu'],['summary','📊','Report'],['items','⚙️','Items'],['dsr','📋','Daily Sales'],['save','💾','Save &amp; Close']].map(t=>`<button class="${V.tab===t[0]?'on':''}" data-a="tab" data-t="${t[0]}"><i>${t[1]}</i>${t[2]}</button>`).join('');
+  if(keepQ){const q=document.getElementById('q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,D=b.dataset;
+  if(!['step','del','reset','mdel','xdel'].includes(a)&&V.arm){V.arm=null}
+  if(a==='eshare'||a==='ecopy'||a==='edown'||a==='eclose'){expAct(a.slice(1))}
+  else if(a==='gs'){gsAct(D.k)}
+  else if(a==='xlsx'){xlsxAct(D.k)}
+  else if(a==='tab'){V.exp=null;V.tab=D.t;V.cat='All';V.q='';V.arm=null;render()}
+  else if(a==='close'){save();toast('Saved ✓');V.tab='today';V.cat='All';V.q='';render();setTimeout(()=>{try{window.close()}catch(x){}},500)}
+  else if(a==='csvsales'){const ds=Object.keys(S.sales).sort(),r=ds.flatMap(d=>S.menu.flatMap(m=>['cash','gcash'].filter(p=>sold(d,m.id,p)>0).map(p=>[d,m.cat,m.name,PAYN[p],m.price,sold(d,m.id,p),sold(d,m.id,p)*m.price])));if(!r.length)return toast('No sales yet');dl('sales-all-days.csv','\ufeff'+[['Date','Category','Item','Payment','Price','Qty','Total'],...r].map(x=>x.map(q).join(',')).join('\r\n'),'text/csv')}
+  else if(a==='csvexp'){const r=Object.keys(S.exp).sort().flatMap(d=>S.exp[d].map(e=>[d,XN[e.cat],e.desc,e.amt]));if(!r.length)return toast('No expenses yet');dl('expenses-all-days.csv','\ufeff'+[['Date','Type','Description','Amount'],...r].map(x=>x.map(q).join(',')).join('\r\n'),'text/csv')}
+  else if(a==='dtext')exportBox('daily-sales-'+V.date+'.txt',dsrText(V.date),'text/plain');
+  else if(a==='dcsv')exportBox('daily-sales-'+V.date+'.csv','\ufeff'+[['Daily Sales Summary',V.date],...dsrRows(V.date)].map(x=>x.map(q).join(',')).join('\r\n'),'text/csv');
+  else if(a==='pcarry'){const p=dsr(addDays(V.date,-1));S.petty[V.date]=p.close;S.online[V.date]=p.oclose;save();render();toast('Filled from yesterday ✓')}
+  else if(a==='pay'){V.pay=D.p;render()}
+  else if(a==='sstep'){setSale(V.date,D.id,V.pay,sold(V.date,D.id,V.pay)+ +D.n);render()}
+  else if(a==='xcat'){V.xd=document.getElementById('xd').value;V.xa=document.getElementById('xa').value;V.xcat=D.c;render()}
+  else if(a==='xadd'){const ds=document.getElementById('xd').value.trim(),am=+document.getElementById('xa').value;if(!ds)return toast('Enter what it was for');if(!(am>0))return toast('Enter the amount');(S.exp[V.date]=S.exp[V.date]||[]).push({id:'x'+Date.now(),cat:V.xcat,desc:ds,amt:am});V.xd='';V.xa='';save();render();toast('Added ✓')}
+  else if(a==='xdel'){if(V.arm==='x'+D.id){S.exp[V.date]=(S.exp[V.date]||[]).filter(e=>e.id!==D.id);V.arm=null;save()}else V.arm='x'+D.id;render()}
+  else if(a==='mdel'){if(V.arm==='m'+D.id){S.menu=S.menu.filter(m=>m.id!==D.id);for(const k in S.sales)delete S.sales[k][D.id];V.arm=null;save()}else V.arm='m'+D.id;render()}
+  else if(a==='madd'){const n=document.getElementById('mn').value.trim();if(!n)return toast('Enter an item name');S.menu.push({id:'m'+Date.now(),name:n,cat:document.getElementById('mc').value.trim()||'Other',price:Math.max(0,+document.getElementById('mp').value||0)});save();render();toast('Added ✓')}
+  else if(a==='share'){const t=report(V.date);if(navigator.share)navigator.share({title:'Stock report',text:t}).catch(()=>{});else{const r=document.getElementById('rep');r.select();try{navigator.clipboard.writeText(t).then(()=>toast('Copied — paste it in your chat'),()=>toast('Text selected — copy it'))}catch(x){toast('Text selected — copy it')}}}
+  else if(a==='copy'){const r=document.getElementById('rep');r.select();try{navigator.clipboard.writeText(r.value).then(()=>toast('Copied ✓'),()=>toast('Text selected — copy it'))}catch(x){toast('Text selected — copy it')}}
+  else if(a==='csvday')dl('stock-'+V.date+'.csv',toCSV(rowsFor(V.date)),'text/csv');
+  else if(a==='csvall'){const ds=Object.keys(S.days).sort();if(!ds.length)return toast('No records yet');dl('stock-all-days.csv',toCSV(ds.flatMap(rowsFor)),'text/csv')}
+  else if(a==='shareapp'){save();exportBox('inventory-tracker.html',appWithData(),'text/html')}
+  else if(a==='backup')dl('stock-backup-'+TODAY+'.json',JSON.stringify(S),'application/json');
+  else if(a==='restore'){const t=document.getElementById('rt').value.trim();if(t)loadBackup(t);else toast('Paste the backup text first')}
+  else if(a==='day'){V.date=addDays(V.date,+D.n);render()}
+  else if(a==='gotoday'){e.preventDefault();V.date=TODAY;render()}
+  else if(a==='cat'){V.cat=D.c;render()}
+  else if(a==='step'){const m=mv(V.date,D.id);setMv(V.date,D.id,D.f,m[D.f]+ +D.n);render()}
+  else if(a==='add'){const n=document.getElementById('nn').value.trim();if(!n)return;S.items.push({id:'i'+Date.now(),name:n,cat:document.getElementById('nc').value.trim()||'Food',open:Math.max(0,Math.floor(+document.getElementById('no').value)||0),min:Math.max(0,Math.floor(+document.getElementById('nm').value||3))});save();render()}
+  else if(a==='del'){if(V.arm==='d'+D.id){S.items=S.items.filter(i=>i.id!==D.id);for(const k in S.days)delete S.days[k][D.id];V.arm=null;save()}else V.arm='d'+D.id;render()}
+  else if(a==='reset'){if(V.arm==='reset'){S=seed();save();V.arm=null}else V.arm='reset';render()}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;if(t.id==='rf'&&t.files[0]){t.files[0].text().then(loadBackup);return}
+  const a=t.dataset.a,id=t.dataset.id;if(!a)return;
+  if(a==='gsurl'){try{localStorage.setItem('gs_url',t.value.trim())}catch(x){}toast('URL saved ✓')}
+  else if(a==='sset'){setSale(V.date,id,V.pay,t.value);render()}
+  else if(a==='petty'){S.petty[V.date]=Math.max(0,+t.value||0);save();render()}
+  else if(a==='online'){S.online[V.date]=Math.max(0,+t.value||0);save();render()}
+  else if(a==='xdesc'){const e=(S.exp[V.date]||[]).find(x=>x.id===id);if(e&&t.value.trim())e.desc=t.value.trim();save()}
+  else if(a==='xamt'){const e=(S.exp[V.date]||[]).find(x=>x.id===id);if(e)e.amt=Math.max(0,+t.value||0);save();render()}
+  else if(a==='mname'){const m=S.menu.find(x=>x.id===id);if(t.value.trim())m.name=t.value.trim();save()}
+  else if(a==='mprice'){S.menu.find(x=>x.id===id).price=Math.max(0,+t.value||0);save()}
+  else if(a==='set'){setMv(V.date,id,t.dataset.f,t.value);render()}
+  else if(a==='end'){const m=mv(V.date,id),b=begin(V.date,id),diff=Math.floor(+t.value)-(b+m.in-m.out);if(!isNaN(diff)&&t.value!==''){if(diff>0)setMv(V.date,id,'in',m.in+diff);else if(diff<0)setMv(V.date,id,'out',m.out-diff)}render()}
+  else if(a==='from'||a==='to'){if(t.value){V[a]=t.value;render()}}
+  else if(a==='iname'){const i=S.items.find(x=>x.id===id);if(t.value.trim())i.name=t.value.trim();save()}
+  else if(a==='icat'){const i=S.items.find(x=>x.id===id);i.cat=t.value.trim()||i.cat;save()}
+  else if(a==='imin'){S.items.find(x=>x.id===id).min=Math.max(0,Math.floor(+t.value)||0);save()}
+  else if(a==='iopen'){S.items.find(x=>x.id===id).open=Math.floor(+t.value)||0;save()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='q'){V.q=e.target.value;render(true)}});
+document.addEventListener('focusin',e=>{if(e.target.type==='number')e.target.select()});
+render();
+
+/* ===== LIVE SYNC (Firebase Realtime Database) ===== */
+(function(){
+const mem={};
+const DEF={fb_url:'https://cabsfoodhouse-bf332-default-rtdb.firebaseio.com'};
+const get=k=>{let v='';try{v=localStorage.getItem(k)||mem[k]||''}catch(e){v=mem[k]||''}return v||DEF[k]||''};
+const put=(k,v)=>{mem[k]=v;try{localStorage.setItem(k,v)}catch(e){}};
+let es=null,timer=null,deferred=false,state='off';
+const base=()=>{const u=get('fb_url').trim().replace(/\/+$/,''),r=get('fb_room').replace(/[^A-Za-z0-9_-]/g,'');return u&&r?u+'/rooms/'+r+'.json':''};
+const arr=x=>Array.isArray(x)?x:(x&&typeof x==='object'?Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]):[]);
+function norm(o){o.items=arr(o.items);o.menu=arr(o.menu);['days','sales','petty','online'].forEach(k=>{if(!o[k])o[k]={}});o.exp=o.exp||{};for(const d in o.exp)o.exp[d]=arr(o.exp[d]);return o}
+const badge=document.createElement('button');
+badge.style.cssText='position:fixed;top:6px;right:8px;z-index:60;border:0;border-radius:99px;padding:5px 11px;font:600 12px system-ui,sans-serif;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)';
+document.body.appendChild(badge);
+function paint(){const m={off:['#6b7280','Set up live sync'],live:['#16a34a','● Live'],sending:['#2563eb','Syncing…'],err:['#dc2626','Offline'+(why?': '+why:'')+' – retrying']}[state];badge.style.background=m[0];badge.textContent=m[1]}
+let why='';function setState(s,w){state=s;why=w||'';paint()}
+function refresh(){
+  const a=document.activeElement;
+  if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){deferred=true;return}
+  try{render(true)}catch(e){}
+}
+document.addEventListener('focusout',()=>{if(deferred){deferred=false;setTimeout(refresh,150)}});
+function apply(remote){
+  if(!remote||typeof remote!=='object'||!remote.items)return false;
+  remote=norm(remote);
+  if((remote._t||0)<=(S._t||0))return false;
+  S=remote;put(K,JSON.stringify(S));refresh();return true;
+}
+function why_(r){return r&&(r.status===401||r.status===403)?'permission denied (check Firebase Rules)':r&&r.status?'server '+r.status:'no internet or blocked'}
+function push(){
+  const u=base();if(!u)return;
+  clearTimeout(timer);
+  timer=setTimeout(()=>{
+    setState('sending');
+    fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)})
+      .then(r=>{if(!r.ok)throw r;setState('live')})
+      .catch(r=>setState('err','save failed - '+why_(r)));
+  },400);
+}
+let poll=null,busy=false;
+function pull(first){
+  const u=base();if(!u||busy)return;
+  busy=true;
+  const done=()=>{busy=false};
+  fetch(first?u:u.replace(/\.json$/,'/_t.json'),{cache:'no-store'}).then(r=>{if(!r.ok)throw r;return r.json()}).then(v=>{
+    setState('live');
+    if(first){
+      if(v==null){push();return}
+      if(!apply(v)&&(S._t||0)>(v._t||0))push();
+    }else{
+      const rt=+v||0;
+      if(rt>(S._t||0))return fetch(u,{cache:'no-store'}).then(r=>r.json()).then(full=>{apply(full)});
+    }
+  }).catch(r=>setState('err',why_(r))).then(done,done);
+}
+function connect(){
+  try{
+    if(es){es.close();es=null}
+    clearInterval(poll);poll=null;
+    if(!base()){setState('off');return}
+    setState('sending');
+    busy=false;pull(true);
+    poll=setInterval(()=>pull(false),2500);
+  }catch(e){setState('err',String(e&&e.message||e))}
+}
+function dialog(){
+  if(document.getElementById('syncdlg'))return;
+  const w=document.createElement('div');w.id='syncdlg';
+  w.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+  w.innerHTML='<div style="background:#1f1b16;color:#f3ede2;border-radius:16px;padding:18px;width:100%;max-width:420px;font:15px system-ui,sans-serif">'
+  +'<h3 style="margin:0 0 10px;font-size:18px">Live sync setup</h3>'
+  +'<label style="font-size:13px;opacity:.8">Firebase database URL</label>'
+  +'<input id="sd_u" type="url" placeholder="https://yourshop-default-rtdb.firebaseio.com" style="width:100%;box-sizing:border-box;margin:4px 0 12px;padding:11px;border-radius:10px;border:1px solid #555;background:#2a251f;color:inherit;font-size:15px">'
+  +'<label style="font-size:13px;opacity:.8">Shared room code (same on every phone)</label>'
+  +'<input id="sd_r" type="text" placeholder="myshop-7x2k" autocapitalize="off" style="width:100%;box-sizing:border-box;margin:4px 0 12px;padding:11px;border-radius:10px;border:1px solid #555;background:#2a251f;color:inherit;font-size:15px">'
+  +'<div id="sd_m" style="font-size:13px;color:#fca5a5;min-height:16px;margin-bottom:8px"></div>'
+  +'<div style="display:flex;gap:8px"><button id="sd_c" style="flex:1;padding:11px;border-radius:10px;border:0;background:#3a342c;color:inherit;font-weight:600">Cancel</button>'
+  +'<button id="sd_s" style="flex:1;padding:11px;border-radius:10px;border:0;background:#16a34a;color:#fff;font-weight:700">Connect</button></div></div>';
+  document.body.appendChild(w);
+  const u=w.querySelector('#sd_u'),r=w.querySelector('#sd_r'),m=w.querySelector('#sd_m');
+  u.value=get('fb_url');r.value=get('fb_room');
+  w.querySelector('#sd_c').onclick=()=>w.remove();
+  w.querySelector('#sd_s').onclick=()=>{
+    try{
+      let uv=u.value.trim().replace(/\/+$/,'').replace(/\.json$/,''),rv=r.value.trim().replace(/[^A-Za-z0-9_-]/g,'');
+      m.style.color='#fca5a5';
+      if(!/^https:\/\/[^\s\/]+$/.test(uv)){m.textContent='URL must look like https://name-default-rtdb.firebaseio.com (no extra path)';return}
+      if(!rv){m.textContent='Room code: use letters, numbers, - or _';return}
+      m.style.color='#fde68a';m.textContent='Testing connection…';
+      fetch(uv+'/rooms/'+rv+'.json').then(res=>{
+        if(res.status===401||res.status===403){m.style.color='#fca5a5';m.textContent='Permission denied. In Firebase, open Realtime Database > Rules and set ".read": true, ".write": true, then Publish.';return}
+        if(!res.ok){m.style.color='#fca5a5';m.textContent='Server replied '+res.status+'. Check the database URL.';return}
+        put('fb_url',uv);put('fb_room',rv);w.remove();connect();
+      }).catch(()=>{m.style.color='#fca5a5';m.textContent='Cannot reach the database. If this is the in-app viewer, it blocks internet access: open the file in Safari/Chrome instead.'});
+    }catch(e){m.textContent='Error: '+(e&&e.message||e)}
+  };
+}
+badge.onclick=dialog;
+window.__sync={push};
+paint();connect();
+})();
+</script>
+</body>
+</html>
